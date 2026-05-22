@@ -255,6 +255,5 @@ make destroy
 make clean-all
 ```
 
-## License
+<img width="1513" height="618" alt="image" src="https://github.com/user-attachments/assets/2b172cd1-80d6-4e34-bb30-d824157cb60b" />
 
-MIT
