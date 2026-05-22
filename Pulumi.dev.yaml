@@ -1,0 +1,11 @@
+config:
+  guestbook-monitoring:guestbookNamespace: guestbook
+  guestbook-monitoring:monitoringNamespace: monitoring
+  guestbook-monitoring:grafanaNodePort: "30300"
+  guestbook-monitoring:prometheusNodePort: "30090"
+  guestbook-monitoring:guestbookNodePort: "30080"
+  guestbook-monitoring:frontendReplicas: "2"
+  guestbook-monitoring:redisReplicas: "2"
+  guestbook-monitoring:grafanaAdminPassword:
+    secure: v1:J0rvV6V0L2qYglOw:8jQuX+reDEnp7fcFGV03QyOdKCv32O2rpyabSMqmCmSF
+encryptionsalt: v1:eXTrhqlpykA=:v1:Qyo9L7IltPKY3VqO:AvN78PbBrJSnNrUSBHU9w2+5lsQBLw==

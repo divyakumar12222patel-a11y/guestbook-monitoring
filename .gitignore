@@ -1,0 +1,11 @@
+node_modules/
+bin/
+.pulumi/
+*.js.map
+*.d.ts
+!jest.config.js
+.env
+*.env.local
+.DS_Store
+coverage/
+dist/

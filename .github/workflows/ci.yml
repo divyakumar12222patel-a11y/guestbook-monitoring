@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npx eslint 'infra/**/*.ts' 'index.ts' --ext .ts || true
+
+      - name: Prettier check
+        run: npx prettier --check 'infra/**/*.ts' 'index.ts' || true
+
+  validate-yaml:
+    name: Validate YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .github/workflows/*.yml
+          config_data: |
+            extends: default
+            rules:
+              line-length:
+                max: 200
+
+  pulumi-preview:
+    name: Pulumi Preview
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Pulumi
+        uses: pulumi/actions@v5
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Install kind
+        run: |
+          curl -Lo ./kind "https://kind.sigs.k8s.io/dl/v0.21.0/kind-linux-amd64"
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Create kind cluster
+        run: |
+          kind create cluster --name guestbook-monitoring
+          kubectl wait --for=condition=Ready node --all --timeout=120s
+
+      - name: Pulumi login (local)
+        run: pulumi login --local
+
+      - name: Pulumi stack select or init
+        run: pulumi stack select dev --create
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+
+      - name: Set config
+        run: |
+          pulumi config set grafanaAdminPassword "preview-test" --secret
+          pulumi config set grafanaNodePort 30300
+          pulumi config set prometheusNodePort 30090
+          pulumi config set guestbookNodePort 30080
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+
+      - name: Pulumi Preview
+        run: pulumi preview
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true

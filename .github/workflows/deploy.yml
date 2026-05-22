@@ -1,0 +1,53 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack:
+        description: 'Pulumi stack to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - up
+          - destroy
+
+jobs:
+  deploy:
+    name: Pulumi ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.stack }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Pulumi
+        uses: pulumi/actions@v5
+
+      - name: Pulumi ${{ inputs.action }}
+        uses: pulumi/actions@v5
+        with:
+          command: ${{ inputs.action }}
+          stack-name: ${{ inputs.stack }}
+          work-dir: .
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
