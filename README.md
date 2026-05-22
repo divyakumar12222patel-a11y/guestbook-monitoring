@@ -2,31 +2,6 @@
 
 Production-quality Kubernetes Guestbook application with full Prometheus + Grafana observability, deployed via Pulumi TypeScript on a local kind cluster.
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        kind Cluster                                  │
-│                                                                     │
-│  Namespace: guestbook                 Namespace: monitoring          │
-│  ┌────────────────────────┐          ┌───────────────────────────┐  │
-│  │  Frontend (2 replicas) │          │  kube-prometheus-stack    │  │
-│  │  NodePort: 30080       │          │  ┌─────────────────────┐  │  │
-│  │                        │          │  │  Prometheus          │  │  │
-│  │  Redis Master (1)      │          │  │  NodePort: 30090    │  │  │
-│  │  + redis-exporter      │──────────│  └─────────────────────┘  │  │
-│  │                        │  scrape  │  ┌─────────────────────┐  │  │
-│  │  Redis Follower (2)    │          │  │  Grafana            │  │  │
-│  │  + redis-exporter      │          │  │  NodePort: 30300    │  │  │
-│  └────────────────────────┘          │  └─────────────────────┘  │  │
-│                                      │  ┌─────────────────────┐  │  │
-│                                      │  │  Alertmanager       │  │  │
-│                                      │  │  node-exporter      │  │  │
-│                                      │  │  kube-state-metrics │  │  │
-│                                      │  └─────────────────────┘  │  │
-│                                      └───────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
-
 Host Machine:
   http://localhost:30080  →  Guestbook App
   http://localhost:30090  →  Prometheus
@@ -279,26 +254,6 @@ make destroy
 # Remove everything including cluster
 make clean-all
 ```
-
-## Known Limitations
-
-1. **No persistent storage** — Grafana/Prometheus data is lost on pod restart. Acceptable for local dev.
-2. **Single node cluster** — kind runs one control-plane node. Not for production load testing.
-3. **NodePort approach** — Uses NodePort services for simplicity. Cloud deployments should use LoadBalancer or Ingress.
-4. **No TLS** — Endpoints are HTTP only. Production requires TLS termination.
-5. **Frontend metrics** — Collected via blackbox-exporter HTTP probe. Gives availability and latency metrics; byte-level or per-request application metrics would require a custom frontend image.
-
-## Future Improvements
-
-- [ ] Add Loki for log aggregation
-- [ ] Custom alerting rules (Alertmanager)
-- [ ] Persistent volumes for Prometheus/Grafana
-- [ ] Ingress controller with TLS
-- [ ] Multi-environment stack (staging, prod)
-- [ ] Cloud deployment (EKS/GKE/AKS)
-- [ ] Frontend metrics sidecar with prometheus-client
-- [ ] HPA (Horizontal Pod Autoscaler) for frontend
-- [ ] Network policies for namespace isolation
 
 ## License
 
