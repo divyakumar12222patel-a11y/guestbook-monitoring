@@ -8,13 +8,13 @@ Live deployment screenshots showing the full monitoring stack operational.
 
 ### Guestbook App (localhost:30080)
 
-![Guestbook App](docs/screenshots/guestbook-app.png)
+![Guestbook App](docs/screenshots/guestbook-app.jpeg)
 
 PHP frontend running with messages stored in Redis. Submit form writes to Redis master; reads fan out to followers.
 
 ### Grafana — Guestbook Overview Dashboard (localhost:30300)
 
-![Guestbook Overview Dashboard](docs/screenshots/grafana-guestbook-overview.png)
+![Guestbook Overview Dashboard](docs/screenshots/grafana-guestbook-overview.jpeg)
 
 Custom dashboard showing:
 - **Pod Health**: 5 running pods, 0 unhealthy, 0 Redis down instances (8 restarts shown — expected during initial cluster startup)
@@ -23,7 +23,7 @@ Custom dashboard showing:
 
 ### Grafana — Kubernetes Compute Resources (Multi-Cluster)
 
-![Kubernetes Compute Resources](docs/screenshots/grafana-k8s-compute.png)
+![Kubernetes Compute Resources](docs/screenshots/grafana-k8s-compute.jpeg)
 
 Cluster-wide resource view showing:
 - CPU Utilisation: 0.0668 cores | CPU Limits Commitment: 57.5%
@@ -32,7 +32,7 @@ Cluster-wide resource view showing:
 
 ### Prometheus Alerts (localhost:30090)
 
-![Prometheus Alerts](docs/screenshots/prometheus-alerts.png)
+![Prometheus Alerts](docs/screenshots/prometheus-alerts.jpeg)
 
 Prometheus alert rules loaded and evaluated:
 - **122 inactive** alerts (healthy — no firing conditions)
