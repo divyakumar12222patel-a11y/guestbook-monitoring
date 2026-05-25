@@ -2,6 +2,73 @@
 
 Production-quality Kubernetes Guestbook application with full Prometheus + Grafana observability, deployed via Pulumi TypeScript on a local kind cluster.
 
+## Results
+
+Live deployment screenshots showing the full monitoring stack operational.
+
+### Guestbook App (localhost:30080)
+
+![Guestbook App](docs/screenshots/guestbook-app.png)
+
+PHP frontend running with messages stored in Redis. Submit form writes to Redis master; reads fan out to followers.
+
+### Grafana — Guestbook Overview Dashboard (localhost:30300)
+
+![Guestbook Overview Dashboard](docs/screenshots/grafana-guestbook-overview.png)
+
+Custom dashboard showing:
+- **Pod Health**: 5 running pods, 0 unhealthy, 0 Redis down instances (8 restarts shown — expected during initial cluster startup)
+- **CPU & Memory**: Per-pod CPU (~0.001–0.014 cores) and memory (23–62 MiB) for frontend replicas and Redis follower
+- **Redis Metrics**: Connected clients, commands/sec (~2–3 ops/sec), memory usage, keys count
+
+### Grafana — Kubernetes Compute Resources (Multi-Cluster)
+
+![Kubernetes Compute Resources](docs/screenshots/grafana-k8s-compute.png)
+
+Cluster-wide resource view showing:
+- CPU Utilisation: 0.0668 cores | CPU Limits Commitment: 57.5%
+- Memory Utilisation: 62.0% | Memory Limits Commitment: 94.5%
+- Memory Requests Commitment: 42.3%
+
+### Prometheus Alerts (localhost:30090)
+
+![Prometheus Alerts](docs/screenshots/prometheus-alerts.png)
+
+Prometheus alert rules loaded and evaluated:
+- **122 inactive** alerts (healthy — no firing conditions)
+- **3 pending** alerts
+- **2 firing** alerts (Watchdog — expected always-on heartbeat alert; InfoInhibitor — 5 active, suppresses low-severity noise)
+- Alert rule files from `kube-prometheus-stack` fully loaded: alertmanager rules, config-reloaders, general rules, kube-apiserver-slos
+
+> **Note on Pod Restarts**: The 8 restarts visible in the dashboard are expected during cluster cold-start. Redis followers restart while waiting for the master to become ready; frontend pods restart until Redis is reachable. All pods stabilize to Running state within ~5 minutes.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        kind Cluster                                  │
+│                                                                     │
+│  Namespace: guestbook                 Namespace: monitoring          │
+│  ┌────────────────────────┐          ┌───────────────────────────┐  │
+│  │  Frontend (2 replicas) │          │  kube-prometheus-stack    │  │
+│  │  NodePort: 30080       │          │  ┌─────────────────────┐  │  │
+│  │                        │          │  │  Prometheus          │  │  │
+│  │  Redis Master (1)      │          │  │  NodePort: 30090    │  │  │
+│  │  + redis-exporter      │──────────│  └─────────────────────┘  │  │
+│  │                        │  scrape  │  ┌─────────────────────┐  │  │
+│  │  Redis Follower (2)    │          │  │  Grafana            │  │  │
+│  │  + redis-exporter      │          │  │  NodePort: 30300    │  │  │
+│  └────────────────────────┘          │  └─────────────────────┘  │  │
+│                                      │  ┌─────────────────────┐  │  │
+│                                      │  │  Alertmanager       │  │  │
+│                                      │  │  node-exporter      │  │  │
+│                                      │  │  kube-state-metrics │  │  │
+│                                      │  └─────────────────────┘  │  │
+│                                      └───────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+
 Host Machine:
   http://localhost:30080  →  Guestbook App
   http://localhost:30090  →  Prometheus
